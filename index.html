@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<!-- Version 1.8 -->
+<html>
+  <head>
+    <base target="_top">
+    <title>Google Workspace Onboard</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <script>
+      // Force reload the page if it's loaded from cache
+      window.onload = function() {
+        if (window.performance && window.performance.navigation.type === window.performance.navigation.TYPE_BACK_FORWARD) {
+          window.location.reload(true);
+        }
+        // Load OUs when page loads
+        loadOUs();
+      }
+    </script>
+    <style>
+      body {
+        font-family: 'Google Sans', 'Roboto', Arial, sans-serif !important;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f8f9fa;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.1);
+        padding: 32px;
+        width: 100%;
+        max-width: 600px;
+        margin-top: 20px;
+      }
+      .logo {
+        text-align: center;
+        margin-bottom: 24px;
+      }
+      .logo img {
+        max-width: 200px;
+        height: auto;
+      }
+      .title {
+        text-align: center;
+        color: #202124;
+        margin-bottom: 32px;
+        font-size: 28px;
+        font-weight: 500;
+      }
+      .form-group {
+        margin-bottom: 20px;
+      }
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #202124;
+        font-size: 14px;
+      }
+      input[type="text"],
+      input[type="email"],
+      input[type="tel"],
+      select {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #dadce0;
+        border-radius: 4px;
+        box-sizing: border-box;
+        font-size: 14px;
+        transition: border-color 0.2s;
+        background-color: white;
+      }
+      select {
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23666%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 12px;
+        padding-right: 30px;
+      }
+      input[type="text"]:focus,
+      input[type="email"]:focus,
+      input[type="tel"]:focus,
+      select:focus {
+        border-color: #1a73e8;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(26,115,232,0.2);
+      }
+      input[type="text"]::placeholder,
+      input[type="email"]::placeholder,
+      input[type="tel"]::placeholder {
+        color: #5f6368;
+      }
+      .error-message {
+        color: #d93025;
+        font-size: 12px;
+        margin-top: 4px;
+        display: none;
+      }
+      .error input,
+      .error select {
+        border-color: #d93025;
+      }
+      .error .error-message {
+        display: block;
+      }
+      button {
+        background-color: #1a73e8;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        width: 100%;
+        transition: background-color 0.2s, box-shadow 0.2s;
+        margin-top: 8px;
+      }
+      button:hover {
+        background-color: #1557b0;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+      }
+      button:active {
+        background-color: #174ea6;
+        box-shadow: 0 1px 1px rgba(0,0,0,0.2);
+      }
+      .required-field::after {
+        content: " *";
+        color: #d93025;
+      }
+      .email-input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+      .email-input-wrapper input {
+        padding-right: 85px;
+      }
+      .email-suffix {
+        position: absolute;
+        right: 12px;
+        color: #5f6368;
+        font-size: 14px;
+        pointer-events: none;
+        user-select: none;
+      }
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0,0,0,0.3);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+      }
+      .modal-overlay.active {
+        display: flex;
+      }
+      .modal-content {
+        background: #fff;
+        padding: 32px 48px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .spinner {
+        border: 6px solid #f3f3f3;
+        border-top: 6px solid #1a73e8;
+        border-radius: 50%;
+        width: 48px;
+        height: 48px;
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      .creating-text {
+        font-size: 20px;
+        color: #1a73e8;
+        font-weight: 500;
+        letter-spacing: 1px;
+        animation: pulse 1.2s infinite;
+      }
+      @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+      }
+      .success-modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0,0,0,0.3);
+        z-index: 10000;
+        justify-content: center;
+        align-items: center;
+      }
+      .success-modal-overlay.active {
+        display: flex;
+      }
+      .success-modal-content {
+        background: #fff;
+        padding: 32px 48px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 320px;
+        font-family: 'Google Sans', 'Roboto', Arial, sans-serif;
+      }
+      .success-title {
+        color: #188038;
+        font-size: 22px;
+        font-weight: 600;
+        margin-bottom: 16px;
+      }
+      .success-details {
+        text-align: left;
+        margin-bottom: 20px;
+        width: 100%;
+      }
+      .success-details p {
+        margin: 6px 0;
+        font-size: 15px;
+      }
+      .close-success-btn {
+        background: #1a73e8;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        padding: 10px 24px;
+        font-size: 15px;
+        font-weight: 500;
+        cursor: pointer;
+        margin-top: 10px;
+        transition: background 0.2s;
+      }
+      .close-success-btn:hover {
+        background: #1557b0;
+      }
+      .card, .modal-content, .success-modal-content, .form-group, label, input, select, button, .title, .logo, .email-suffix, .required-field, .error-message, .creating-text, .success-title, .success-details, .close-success-btn {
+        font-family: 'Google Sans', 'Roboto', Arial, sans-serif !important;
+      }
+      .fade {
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+      }
+      .fade.show {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .autocomplete-suggestions {
+        font-family: 'Google Sans', 'Roboto', Arial, sans-serif !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        display: none;
+      }
+      .autocomplete-suggestion {
+        padding: 10px 16px;
+        cursor: pointer;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 15px;
+      }
+      .autocomplete-suggestion:last-child {
+        border-bottom: none;
+      }
+      .autocomplete-suggestion.active, .autocomplete-suggestion:hover {
+        background: #e8f0fe;
+      }
+      .modal-overlay, .success-modal-overlay, .error-modal-overlay {
+        transition: opacity 0.2s;
+        opacity: 0;
+        pointer-events: none;
+      }
+      .modal-overlay.active, .success-modal-overlay.active, .error-modal-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .error-modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0,0,0,0.3);
+        z-index: 10001;
+        justify-content: center;
+        align-items: center;
+      }
+      .error-modal-overlay.active {
+        display: flex;
+      }
+      .error-modal-content {
+        background: #fff;
+        padding: 32px 48px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 320px;
+        font-family: 'Google Sans', 'Roboto', Arial, sans-serif;
+      }
+      .error-title {
+        color: #d93025;
+        font-size: 22px;
+        font-weight: 600;
+        margin-bottom: 16px;
+      }
+      .error-details {
+        text-align: left;
+        margin-bottom: 20px;
+        width: 100%;
+        color: #d93025;
+        font-size: 15px;
+      }
+      .close-error-btn {
+        background: #1a73e8;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        padding: 10px 24px;
+        font-size: 15px;
+        font-weight: 500;
+        cursor: pointer;
+        margin-top: 10px;
+        transition: background 0.2s;
+      }
+      .close-error-btn:hover {
+        background: #1557b0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal-content">
+        <div class="spinner"></div>
+        <div class="creating-text">Creating user...</div>
+      </div>
+    </div>
+    <div class="success-modal-overlay" id="successModal">
+      <div class="success-modal-content">
+        <div class="success-title">User Created Successfully!</div>
+        <div class="success-details" id="successDetails"></div>
+        <button class="close-success-btn" onclick="document.getElementById('successModal').classList.remove('active')">Close</button>
+      </div>
+    </div>
+    <div class="error-modal-overlay" id="errorModal">
+      <div class="error-modal-content">
+        <div class="error-title">Error Creating User</div>
+        <div class="error-details" id="errorDetails"></div>
+        <button class="close-error-btn" onclick="document.getElementById('errorModal').classList.remove('active')">Close</button>
+      </div>
+    </div>
+    <div class="card">
+      <div style="background:#fff3cd;color:#856404;border:1px solid #ffeeba;padding:12px 20px;border-radius:6px;margin-bottom:20px;font-size:15px;">
+        <strong>Note:</strong> Only Google Workspace super admins can use this onboarding tool. If you are not a super admin, you will not be able to create users.
+      </div>
+      <div class="logo">
+        <img src="https://i.imgur.com/UT4XN8u.png" alt="Company Logo">
+      </div>
+      <h1 class="title">Google Workspace Onboard</h1>
+      <form id="onboardForm">
+        <div class="form-group">
+          <label for="firstName" class="required-field">First Name</label>
+          <input type="text" id="firstName" name="firstName" required 
+                 maxlength="30" placeholder="Enter first name">
+          <div class="error-message">First name is required and must be 30 characters or less</div>
+        </div>
+        <div class="form-group">
+          <label for="lastName" class="required-field">Last Name</label>
+          <input type="text" id="lastName" name="lastName" required 
+                 maxlength="30" placeholder="Enter last name">
+          <div class="error-message">Last name is required and must be 30 characters or less</div>
+        </div>
+        <div class="form-group">
+          <label for="title" class="required-field">Title</label>
+          <input type="text" id="title" name="title" required 
+                 maxlength="30" placeholder="Enter job title">
+          <div class="error-message">Title is required and must be 30 characters or less</div>
+        </div>
+        <div class="form-group">
+          <label for="department" class="required-field">Department</label>
+          <select id="department" name="department" required>
+            <option value="">Select Department</option>
+            <option value="Marketing">Marketing</option>
+            <option value="Sales">Sales</option>
+            <option value="Engineering">Engineering</option>
+            <option value="Operations">Operations</option>
+            <option value="Consulting">Consulting</option>
+          </select>
+          <div class="error-message">Please select a department</div>
+        </div>
+        <div class="form-group">
+          <label for="email" class="required-field">Primary Email</label>
+          <div class="email-input-wrapper">
+            <input type="email" id="email" name="email" required 
+                   maxlength="30" placeholder="Enter username">
+            <span class="email-suffix">@ion8.net</span>
+          </div>
+          <div class="error-message">Username is required and must be 30 characters or less</div>
+        </div>
+        <div class="form-group">
+          <label for="secondaryEmail" class="required-field">Secondary Email</label>
+          <input type="email" id="secondaryEmail" name="secondaryEmail" required 
+                 maxlength="30" placeholder="Enter full email address">
+          <div class="error-message">Secondary email is required and must be 30 characters or less</div>
+        </div>
+        <div class="form-group">
+          <label for="phoneNumber" class="required-field">Phone Number</label>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <select id="countryCode" name="countryCode" required style="width: 110px;">
+              <option value="+1">+1 (US/Canada)</option>
+              <option value="+44">+44 (UK)</option>
+              <option value="+61">+61 (Australia)</option>
+              <option value="+91">+91 (India)</option>
+              <option value="+81">+81 (Japan)</option>
+              <option value="+49">+49 (Germany)</option>
+              <option value="+33">+33 (France)</option>
+              <option value="+39">+39 (Italy)</option>
+              <option value="+34">+34 (Spain)</option>
+              <option value="+86">+86 (China)</option>
+              <option value="+7">+7 (Russia)</option>
+              <option value="+27">+27 (South Africa)</option>
+              <option value="+64">+64 (New Zealand)</option>
+              <option value="+351">+351 (Portugal)</option>
+              <option value="+55">+55 (Brazil)</option>
+              <option value="+52">+52 (Mexico)</option>
+              <option value="+353">+353 (Ireland)</option>
+              <option value="+358">+358 (Finland)</option>
+              <option value="+47">+47 (Norway)</option>
+              <option value="+46">+46 (Sweden)</option>
+              <option value="+31">+31 (Netherlands)</option>
+              <option value="+32">+32 (Belgium)</option>
+              <option value="+41">+41 (Switzerland)</option>
+              <option value="+420">+420 (Czech Republic)</option>
+              <option value="+48">+48 (Poland)</option>
+              <option value="+82">+82 (South Korea)</option>
+              <option value="+65">+65 (Singapore)</option>
+              <option value="+60">+60 (Malaysia)</option>
+              <option value="+62">+62 (Indonesia)</option>
+              <option value="+63">+63 (Philippines)</option>
+              <option value="+66">+66 (Thailand)</option>
+              <option value="+90">+90 (Turkey)</option>
+              <option value="+972">+972 (Israel)</option>
+              <option value="+880">+880 (Bangladesh)</option>
+              <option value="+20">+20 (Egypt)</option>
+              <option value="+971">+971 (UAE)</option>
+              <option value="+966">+966 (Saudi Arabia)</option>
+              <option value="+234">+234 (Nigeria)</option>
+              <option value="+254">+254 (Kenya)</option>
+              <!-- Add more as needed -->
+            </select>
+            <input type="tel" id="phoneNumber" name="phoneNumber" required 
+                   placeholder="5551234567" maxlength="15" style="flex:1;">
+          </div>
+          <div class="error-message">Please enter a valid phone number</div>
+        </div>
+        <div class="form-group">
+          <label for="ou" class="required-field">Organizational Unit</label>
+          <select id="ou" name="ou" required>
+            <option value="">Loading OUs...</option>
+          </select>
+          <div class="error-message">Please select an organizational unit</div>
+        </div>
+        <div class="form-group">
+          <label for="manager" class="required-field">Manager</label>
+          <div style="position: relative;">
+            <input type="text" id="managerInput" name="manager" autocomplete="off" required placeholder="Start typing to search...">
+            <input type="hidden" id="managerEmail" name="managerEmail">
+            <input type="hidden" id="managerName" name="managerName">
+            <div id="managerSuggestions" class="autocomplete-suggestions" style="position:absolute;top:100%;left:0;width:100%;background:#fff;border:1px solid #dadce0;border-radius:0 0 4px 4px;z-index:10;display:none;max-height:180px;overflow-y:auto;"></div>
+          </div>
+          <div class="error-message">Please select a manager from the list</div>
+        </div>
+        <button type="submit">Create User</button>
+      </form>
+    </div>
+
+    <script>
+      // Load OUs from the server
+      function loadOUs() {
+        google.script.run
+          .withSuccessHandler(function(ous) {
+            const ouSelect = document.getElementById('ou');
+            ouSelect.innerHTML = '<option value="">Select Organizational Unit</option>';
+            ous.forEach(function(ou) {
+              const option = document.createElement('option');
+              option.value = ou.orgUnitPath;
+              option.textContent = ou.name;
+              ouSelect.appendChild(option);
+            });
+          })
+          .withFailureHandler(function(error) {
+            console.error('Failed to load OUs:', error);
+            const ouSelect = document.getElementById('ou');
+            ouSelect.innerHTML = '<option value="">Error loading OUs</option>';
+          })
+          .getOUs();
+      }
+
+      // Phone number input: allow only +, digits, spaces, hyphens
+      const phoneInput = document.getElementById('phoneNumber');
+      phoneInput.addEventListener('input', function(e) {
+        // Only allow + at the start, then digits, spaces, hyphens
+        let value = e.target.value;
+        // Remove invalid characters
+        value = value.replace(/(?!^\+)[^\d\s-]/g, '');
+        // Only one + at the start
+        if (value.indexOf('+') > 0) {
+          value = value.replace(/\+/g, '');
+          value = '+' + value;
+        }
+        e.target.value = value;
+      });
+      phoneInput.addEventListener('keypress', function(e) {
+        if (e.target.selectionStart === 0 && e.key === '+') return true;
+        if (!/[\d\s-]/.test(e.key)) {
+          e.preventDefault();
+        }
+      });
+
+      // Email domain autocomplete for primary email only
+      const emailInput = document.getElementById('email');
+      
+      emailInput.addEventListener('blur', function() {
+        if (this.value && !this.value.includes('@')) {
+          this.value = this.value + '@ion8.net';
+        }
+      });
+
+      // Form validation
+      document.getElementById('onboardForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        let isValid = true;
+        
+        // Reset previous errors
+        document.querySelectorAll('.form-group').forEach(group => {
+          group.classList.remove('error');
+        });
+
+        // Validate first name
+        const firstName = document.getElementById('firstName');
+        if (!firstName.value || firstName.value.length > 30) {
+          firstName.parentElement.classList.add('error');
+          isValid = false;
+        }
+
+        // Validate last name
+        const lastName = document.getElementById('lastName');
+        if (!lastName.value || lastName.value.length > 30) {
+          lastName.parentElement.classList.add('error');
+          isValid = false;
+        }
+
+        // Validate title
+        const title = document.getElementById('title');
+        if (!title.value || title.value.length > 30) {
+          title.parentElement.classList.add('error');
+          isValid = false;
+        }
+
+        // Validate department
+        const department = document.getElementById('department');
+        if (!department.value) {
+          department.parentElement.classList.add('error');
+          isValid = false;
+        }
+
+        // Validate primary email
+        const email = document.getElementById('email');
+        if (!email.value || email.value.length > 30) {
+          email.parentElement.classList.add('error');
+          isValid = false;
+        }
+
+        // Validate secondary email
+        const secondaryEmail = document.getElementById('secondaryEmail');
+        if (!secondaryEmail.value || secondaryEmail.value.length > 30) {
+          secondaryEmail.parentElement.classList.add('error');
+          isValid = false;
+        }
+
+        // Validate phone number
+        const countryCode = document.getElementById('countryCode');
+        const phoneNumber = document.getElementById('phoneNumber');
+        const phoneDigits = phoneNumber.value.replace(/\D/g, '');
+        if (!countryCode.value || !phoneDigits || phoneDigits.length < 7 || phoneDigits.length > 12) {
+          phoneNumber.parentElement.parentElement.classList.add('error');
+          isValid = false;
+        }
+
+        // Validate OU
+        const ou = document.getElementById('ou');
+        if (!ou.value) {
+          ou.parentElement.classList.add('error');
+          isValid = false;
+        }
+
+        // Validate manager
+        const managerEmailInput = document.getElementById('managerEmail');
+        if (!managerEmailInput.value) {
+          managerInput.parentElement.parentElement.classList.add('error');
+          isValid = false;
+        }
+
+        if (isValid) {
+          // Show modal
+          document.getElementById('modalOverlay').classList.add('active');
+          const formData = {
+            firstName: firstName.value,
+            lastName: lastName.value,
+            title: title.value,
+            department: department.value,
+            email: email.value,
+            secondaryEmail: secondaryEmail.value,
+            phoneNumber: countryCode.value + phoneDigits,
+            ou: ou.value,
+            manager: managerEmailInput.value,
+            managerName: document.getElementById('managerName').value
+          };
+
+          google.script.run
+            .withSuccessHandler(function(response) {
+              document.getElementById('modalOverlay').classList.remove('active');
+              if (response && response.success) {
+                // Show success modal with user details
+                const details = response.user;
+                let html = '';
+                html += `<p><strong>Name:</strong> ${details.name}</p>`;
+                html += `<p><strong>Email:</strong> ${details.email}</p>`;
+                html += `<p><strong>Department:</strong> ${details.department}</p>`;
+                html += `<p><strong>Title:</strong> ${details.title}</p>`;
+                html += `<p><strong>Manager:</strong> ${details.managerName ? details.managerName + ' &lt;' + details.manager + '&gt;' : (details.manager ? details.manager : 'N/A')}</p>`;
+                document.getElementById('successDetails').innerHTML = html;
+                document.getElementById('successModal').classList.add('active');
+                document.getElementById('onboardForm').reset();
+              } else {
+                alert('User creation failed. Please try again.');
+              }
+            })
+            .withFailureHandler(function(error) {
+              document.getElementById('modalOverlay').classList.remove('active');
+              document.getElementById('errorDetails').textContent = (typeof error === 'string' ? error : (error && error.message ? error.message : 'Unknown error'));
+              document.getElementById('errorModal').classList.add('active');
+            })
+            .createUser(formData);
+        }
+      });
+
+      let allManagers = [];
+      function fetchManagers() {
+        google.script.run.withSuccessHandler(function(users) {
+          allManagers = users;
+        }).getAllUsers();
+      }
+      fetchManagers();
+
+      const managerInput = document.getElementById('managerInput');
+      const managerEmail = document.getElementById('managerEmail');
+      const managerSuggestions = document.getElementById('managerSuggestions');
+
+      managerInput.addEventListener('input', function() {
+        const value = this.value.trim().toLowerCase();
+        managerSuggestions.innerHTML = '';
+        if (!value) {
+          managerSuggestions.style.display = 'none';
+          managerEmail.value = '';
+          return;
+        }
+        const matches = allManagers.filter(u =>
+          u.name.toLowerCase().includes(value) || u.email.toLowerCase().includes(value)
+        ).slice(0, 10);
+        if (matches.length === 0) {
+          managerSuggestions.style.display = 'none';
+          managerEmail.value = '';
+          return;
+        }
+        matches.forEach(user => {
+          const div = document.createElement('div');
+          div.className = 'autocomplete-suggestion';
+          div.textContent = `${user.name} <${user.email}>`;
+          div.addEventListener('mousedown', function(e) {
+            managerInput.value = `${user.name} <${user.email}>`;
+            managerEmail.value = user.email;
+            document.getElementById('managerName').value = user.name;
+            managerSuggestions.style.display = 'none';
+          });
+          managerSuggestions.appendChild(div);
+        });
+        managerSuggestions.style.display = 'block';
+      });
+      managerInput.addEventListener('blur', function() {
+        setTimeout(() => managerSuggestions.style.display = 'none', 200);
+      });
+    </script>
+  </body>
+</html> 
