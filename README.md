@@ -2,6 +2,10 @@
 
 A web-based user onboarding tool for Google Workspace administrators built with Google Apps Script.
 
+<p align="center">
+  <img src="onboard_graphic.png" alt="Onboarding Form Screenshot" style="display: block; margin: 0 auto;" />
+</p>
+
 ## Features
 
 - ✅ **User-friendly web form** with modern Material Design UI
