@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        color: #202124;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .logo {
+        max-width: 200px;
+        height: auto;
+      }
+      .content {
+        background-color: #ffffff;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      .welcome-text {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 20px;
+        color: #1a73e8;
+      }
+      .info-section {
+        margin: 20px 0;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+      }
+      .info-label {
+        font-weight: bold;
+        color: #5f6368;
+        display: inline-block;
+        width: 150px;
+      }
+      .info-value {
+        color: #202124;
+      }
+      .footer {
+        margin-top: 30px;
+        text-align: center;
+        font-size: 12px;
+        color: #5f6368;
+      }
+      .section-title {
+        font-size: 18px;
+        font-weight: bold;
+        color: #1a73e8;
+        margin: 20px 0 10px 0;
+        padding-bottom: 5px;
+        border-bottom: 2px solid #1a73e8;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <img src="https://i.imgur.com/UT4XN8u.png" alt="Company Logo" class="logo">
+    </div>
+    
+    <div class="content">
+      <div class="welcome-text">
+        Welcome to <?= Session.getActiveUser().getEmail().split('@')[1] ?>!
+      </div>
+      
+      <p>Hello <?= user.name.givenName ?>,</p>
+      
+      <p>Your Google Workspace account has been successfully created. Here are your account details:</p>
+      
+      <div class="section-title">Personal Information</div>
+      <div class="info-section">
+        <p><span class="info-label">Full Name:</span> <span class="info-value"><?= user.name.fullName ?></span></p>
+        <p><span class="info-label">First Name:</span> <span class="info-value"><?= user.name.givenName ?></span></p>
+        <p><span class="info-label">Last Name:</span> <span class="info-value"><?= user.name.familyName ?></span></p>
+      </div>
+
+      <div class="section-title">Contact Information</div>
+      <div class="info-section">
+        <p><span class="info-label">Primary Email:</span> <span class="info-value"><?= user.primaryEmail ?></span></p>
+        <?if (user.emails && user.emails[0]) {?>
+          <p><span class="info-label">Secondary Email:</span> <span class="info-value"><?= user.emails[0].address ?></span></p>
+        <?}?>
+        <?if (user.phones && user.phones[0]) {?>
+          <p><span class="info-label">Phone Number:</span> <span class="info-value"><?= user.phones[0].value ?></span></p>
+        <?}?>
+      </div>
+
+      <div class="section-title">Organization Information</div>
+      <div class="info-section">
+        <?if (user.organizations && user.organizations[0]) {?>
+          <p><span class="info-label">Title:</span> <span class="info-value"><?= user.organizations[0].title ?></span></p>
+          <p><span class="info-label">Department:</span> <span class="info-value"><?= user.organizations[0].department ?></span></p>
+        <?}?>
+        <p><span class="info-label">OU Path:</span> <span class="info-value"><?= user.orgUnitPath ?></span></p>
+      </div>
+      
+      <div class="section-title">Next Steps</div>
+      <p><strong>Important:</strong> You will be required to change your password when you first log in.</p>
+      
+      <p>To access your account:</p>
+      <ol>
+        <li>Go to <a href="https://accounts.google.com">accounts.google.com</a></li>
+        <li>Sign in with your email address</li>
+        <li>Follow the prompts to set up your account</li>
+      </ol>
+      
+      <p>If you have any questions or need assistance, please contact the IT support team.</p>
+      
+      <p>Best regards,<br>IT Team</p>
+    </div>
+    
+    <div class="footer">
+      <p>This is an automated message. Please do not reply to this email.</p>
+    </div>
+  </body>
+</html> 
