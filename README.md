@@ -36,12 +36,13 @@ A web-based user onboarding tool for Google Workspace administrators built with 
 1. In your Apps Script project, click **+** next to Files
 2. Select **HTML**
 3. Name it `Index` (or any name you prefer)
-4. Copy the contents of `google-workspace-onboard.html` into this file
+4. Copy the contents of `index.html` into this file
 
 ### Step 3: Create the Backend Script
 
 1. In your Apps Script project, open `Code.gs`
-2. Add the backend functions (see Backend Functions section below)
+2. Copy the contents of 'main.gs' into this file
+3. Rename 'Code.gs' to 'main.gs' as you like.
 
 ### Step 4: Configure for Your Organization
 
@@ -85,184 +86,6 @@ Update the following in the HTML file:
 2. Find and add **Admin SDK API**
 3. Click **Add**
 
-## Backend Functions Required
-
-You'll need to create these functions in your `Code.gs` file:
-
-```javascript
-/**
- * Serve the HTML interface
- */
-function doGet() {
-  return HtmlService.createHtmlOutputFromFile('Index')
-    .setTitle('Google Workspace Onboard')
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-}
-
-/**
- * Get all organizational units
- */
-function getOUs() {
-  try {
-    const ous = AdminDirectory.Orgunits.list('my_customer', {
-      type: 'all'
-    }).organizationUnits;
-    
-    return ous.map(ou => ({
-      name: ou.name,
-      orgUnitPath: ou.orgUnitPath
-    }));
-  } catch (error) {
-    throw new Error('Failed to fetch OUs: ' + error.message);
-  }
-}
-
-/**
- * Get all users for manager autocomplete
- */
-function getAllUsers() {
-  try {
-    const users = [];
-    let pageToken;
-    
-    do {
-      const response = AdminDirectory.Users.list({
-        customer: 'my_customer',
-        maxResults: 500,
-        pageToken: pageToken,
-        projection: 'basic',
-        query: 'isSuspended=false'
-      });
-      
-      if (response.users) {
-        response.users.forEach(user => {
-          users.push({
-            name: user.name.fullName,
-            email: user.primaryEmail
-          });
-        });
-      }
-      
-      pageToken = response.nextPageToken;
-    } while (pageToken);
-    
-    return users;
-  } catch (error) {
-    throw new Error('Failed to fetch users: ' + error.message);
-  }
-}
-
-/**
- * Create a new user in Google Workspace
- */
-function createUser(formData) {
-  try {
-    // Validate super admin status
-    const currentUser = Session.getActiveUser().getEmail();
-    const userInfo = AdminDirectory.Users.get(currentUser);
-    
-    if (!userInfo.isAdmin || !userInfo.isSuperAdmin) {
-      throw new Error('Only super admins can create users');
-    }
-    
-    // Generate temporary password
-    const tempPassword = generatePassword();
-    
-    // Create user object
-    const user = {
-      name: {
-        givenName: formData.firstName,
-        familyName: formData.lastName
-      },
-      primaryEmail: formData.email,
-      password: tempPassword,
-      changePasswordAtNextLogin: true,
-      orgUnitPath: formData.ou,
-      organizations: [{
-        title: formData.title,
-        department: formData.department,
-        primary: true
-      }],
-      phones: [{
-        type: 'work',
-        value: formData.phoneNumber,
-        primary: true
-      }],
-      recoveryEmail: formData.secondaryEmail
-    };
-    
-    // Add manager relation if provided
-    if (formData.manager) {
-      user.relations = [{
-        type: 'manager',
-        value: formData.manager
-      }];
-    }
-    
-    // Create the user via Admin SDK
-    const createdUser = AdminDirectory.Users.insert(user);
-    
-    // Optional: Send welcome email
-    sendWelcomeEmail(createdUser.primaryEmail, formData.firstName, tempPassword);
-    
-    return {
-      success: true,
-      user: {
-        name: createdUser.name.fullName,
-        email: createdUser.primaryEmail,
-        department: formData.department,
-        title: formData.title,
-        manager: formData.manager,
-        managerName: formData.managerName
-      }
-    };
-    
-  } catch (error) {
-    Logger.log('Error creating user: ' + error);
-    throw new Error('Failed to create user: ' + error.message);
-  }
-}
-
-/**
- * Generate a random password
- */
-function generatePassword() {
-  const length = 16;
-  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-  let password = '';
-  
-  for (let i = 0; i < length; i++) {
-    password += charset.charAt(Math.floor(Math.random() * charset.length));
-  }
-  
-  return password;
-}
-
-/**
- * Send welcome email to new user (optional)
- */
-function sendWelcomeEmail(email, firstName, tempPassword) {
-  const subject = 'Welcome to [Your Company Name]';
-  const body = `
-    Hi ${firstName},
-    
-    Your Google Workspace account has been created!
-    
-    Email: ${email}
-    Temporary Password: ${tempPassword}
-    
-    Please change your password upon first login.
-    
-    Best regards,
-    IT Team
-  `;
-  
-  try {
-    MailApp.sendEmail(email, subject, body);
-  } catch (error) {
-    Logger.log('Failed to send welcome email: ' + error);
-  }
-}
 ```
 
 ## Usage
